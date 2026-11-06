@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f3ed">
+  <meta name="description" content="Learn to tune a PID controller by balancing a wooden stick. A local physics playground with live gains, pushes, and response plots.">
+  <title>Balance Lab — a PID playground</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2328322d'/%3E%3Ccircle cx='32' cy='44' r='10' fill='%23d5ad64'/%3E%3Cpath d='M32 34L37 10' stroke='%23ead8b1' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="physics.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <a href="index.html" class="brand" aria-label="Balance Lab home"><span class="brand-mark" aria-hidden="true"><i></i><b></b></span>balance<span class="brand-light">lab</span><span class="brand-dot">.</span></a>
+    <span class="header-note">A SMALL EXPERIMENT IN CONTROL</span>
+    <a class="header-link" href="#field-notes">How to tune <span aria-hidden="true">↗</span></a>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div><p class="eyebrow"><span></span> THE INVERTED PENDULUM / EXPERIMENT 01</p><h1 id="page-title">Find your balance.</h1><p class="intro-copy">A wooden stick. A moving base. Three gains to get it right.</p></div>
+      <div class="intro-aside"><span class="small-circle" aria-hidden="true">↔</span><p>Move the base.<br><strong>Catch the fall.</strong></p></div>
+    </section>
+
+    <div class="lab-layout">
+      <div class="experiment-column">
+        <section class="stage panel" aria-label="Balancing simulation">
+          <div class="panel-top"><div class="section-label"><span class="section-number">01</span> THE EXPERIMENT</div><div class="stage-state"><span id="state-dot" class="status-dot paused"></span><span id="state-label">Ready to balance</span><span class="time" id="sim-time">00:00.0</span></div></div>
+          <div class="scene-wrap">
+            <canvas id="scene" tabindex="0" role="img" aria-label="Wooden stick pivoted above a circular moving base on a horizontal track" aria-describedby="keyboard-hint">The interactive simulation requires a browser with canvas support.</canvas>
+            <div class="scene-tag"><span class="tag-dot"></span> GRAVITY IS ON YOUR SIDE. MOSTLY.</div>
+            <div class="failure-panel" id="failure-panel" hidden><span class="eyebrow">EXPERIMENT ENDED</span><h2>Every fall is feedback.</h2><p id="failure-reason"></p><button type="button" class="button button-primary" id="failure-reset">Reset &amp; try again <span aria-hidden="true">↻</span></button></div>
+            <div class="scene-bottom"><span id="model-summary">1.4 m wooden rod · 1.0 kg base</span><span>2D · PIVOTED BASE</span></div>
+          </div>
+          <div class="telemetry" aria-label="Live measurements">
+            <div><span class="metric-label">STICK ANGLE</span><strong id="angle-value">+5.00<span>°</span></strong></div>
+            <div><span class="metric-label">BASE POSITION</span><strong id="position-value">0.00<span> m</span></strong></div>
+            <div><span class="metric-label">MOTOR FORCE <span id="limit-indicator" hidden>LIMIT</span></span><strong id="force-value">0.00<span> N</span></strong></div>
+          </div>
+          <div class="transport"><div class="transport-buttons"><button class="button button-primary" id="run-toggle" type="button"><span aria-hidden="true">▶</span> Start simulation</button><button class="button button-quiet" id="reset" type="button" title="Reset the experiment (R)"><span aria-hidden="true">↻</span> Reset</button></div><label class="speed-control" for="speed">Speed <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label></div>
+        </section>
+
+        <section class="disturbance panel" aria-labelledby="push-title">
+          <div><h2 id="push-title">Give it a nudge.</h2><p>A short impulse at the tip. Can your controller catch it?</p></div>
+          <div class="push-controls"><label for="push-strength" class="sr-only">Push strength</label><select id="push-strength"><option value="0.08">Light · 0.08 N·s</option><option value="0.16" selected>Medium · 0.16 N·s</option><option value="0.32">Strong · 0.32 N·s</option><option value="0.6">Challenge · 0.60 N·s</option></select><div class="push-buttons"><button class="button button-outline" id="push-left" type="button" aria-label="Push the stick left">← <span>Push left</span></button><button class="button button-outline" id="push-right" type="button" aria-label="Push the stick right"><span>Push right</span> →</button></div></div>
+        </section>
+
+        <section class="response panel" aria-labelledby="response-title">
+          <div class="panel-top"><div class="section-label" id="response-title"><span class="section-number">02</span> THE RESPONSE</div><div class="chart-tabs" role="group" aria-label="Chart view"><button type="button" class="chart-tab active" data-chart="angle" aria-pressed="true">Angle</button><button type="button" class="chart-tab" data-chart="terms" aria-pressed="false">P / I / D</button></div></div>
+          <div class="chart-caption"><span id="chart-description">Stick angle & target · degrees</span><div id="chart-legend" class="chart-legend"><span><i class="legend-angle"></i>Actual</span><span><i class="legend-target"></i>Target</span></div></div>
+          <canvas id="chart" role="img" aria-label="Stick angle and target angle over the last 15 seconds of simulation">Live response plot.</canvas>
+          <div class="chart-foot"><span id="chart-window">LAST 15 SIMULATED SECONDS</span><span><i class="push-mark"></i> PUSH</span></div>
+        </section>
+      </div>
+
+      <aside class="tuning-column">
+        <section class="tuning panel" aria-labelledby="tuning-title">
+          <div class="panel-top"><div class="section-label" id="tuning-title"><span class="section-number">03</span> THE CONTROLLER</div><span class="live-chip">LIVE TUNING</span></div>
+          <div class="tuning-body">
+            <div class="mode-switch" role="group" aria-label="Control mode"><button id="mode-auto" type="button" aria-pressed="true" class="mode active">PID control</button><button id="mode-manual" type="button" aria-pressed="false" class="mode">Try by hand</button></div>
+            <label class="field-label" for="preset">STARTING POINT</label><select class="full-select" id="preset"><option value="balanced">A steady hand</option><option value="oscillating">All push, no damping</option><option value="gentle">Too little, too late</option><option value="custom" disabled>Custom tune</option></select>
+            <div id="gain-controls">
+              <div class="gain gain-p"><div class="gain-heading"><label for="kp"><span class="gain-letter">P</span> Proportional</label><div class="gain-input"><label for="kp-number" class="sr-only">Proportional gain numeric value</label><input id="kp-number" type="number" min="0" max="200" step="1" value="110"></div></div><input id="kp" type="range" min="0" max="200" step="1" value="110" aria-describedby="kp-help"><p id="kp-help">How hard to catch the lean.</p></div>
+              <div class="gain gain-i"><div class="gain-heading"><label for="ki"><span class="gain-letter">I</span> Integral</label><div class="gain-input"><label for="ki-number" class="sr-only">Integral gain numeric value</label><input id="ki-number" type="number" min="0" max="60" step="0.5" value="0"></div></div><input id="ki" type="range" min="0" max="60" step="0.5" value="0" aria-describedby="ki-help"><p id="ki-help">Correct a persistent angle error.</p></div>
+              <div class="gain gain-d"><div class="gain-heading"><label for="kd"><span class="gain-letter">D</span> Derivative</label><div class="gain-input"><label for="kd-number" class="sr-only">Derivative gain numeric value</label><input id="kd-number" type="number" min="0" max="60" step="0.5" value="18"></div></div><input id="kd" type="range" min="0" max="60" step="0.5" value="18" aria-describedby="kd-help"><p id="kd-help">Brake the angular motion.</p></div>
+            </div>
+            <div class="manual-controls" id="manual-controls" hidden><p>You are the controller. Hold a button or use the arrow keys to move the base.</p><div class="push-buttons"><button type="button" class="button button-outline" id="manual-left">← Base left</button><button type="button" class="button button-outline" id="manual-right">Base right →</button></div></div>
+            <label class="toggle-row" for="recenter"><span><strong>Return to center</strong><small>A slow outer loop keeps the base nearby.</small></span><input id="recenter" type="checkbox" role="switch" checked></label>
+            <p class="controller-note" id="controller-note">Start with P + D. Integral can stay at zero.</p>
+          </div>
+        </section>
+
+        <section class="environment panel" aria-labelledby="environment-title">
+          <div class="panel-top"><div class="section-label" id="environment-title"><span class="section-number">04</span> CHANGE THE CONDITIONS</div></div>
+          <div class="environment-body">
+            <label class="condition-label" for="initial-angle">Starting lean <output id="initial-angle-output" for="initial-angle">5°</output></label><input id="initial-angle" type="range" min="-20" max="20" step="1" value="5"><p class="condition-help">Applied when you reset.</p>
+            <label class="condition-label" for="force-limit">Motor limit <output id="force-limit-output" for="force-limit">18 N</output></label><input id="force-limit" type="range" min="2" max="35" step="1" value="18">
+            <label class="condition-label" for="wind">Constant tip force <output id="wind-output" for="wind">0.00 N</output></label><input id="wind" type="range" min="-0.6" max="0.6" step="0.05" value="0"><p class="condition-help">A steady sideways disturbance.</p>
+          </div>
+        </section>
+        <p class="keyboard-hint" id="keyboard-hint"><kbd>←</kbd> <kbd>→</kbd> push / manual force <br><kbd>Space</kbd> pause <span>·</span> <kbd>R</kbd> reset</p>
+      </aside>
+    </div>
+
+    <section class="field-notes" id="field-notes" aria-labelledby="notes-title">
+      <div class="notes-heading"><p class="eyebrow">A FEW FIELD NOTES</p><h2 id="notes-title">Learn one correction at a time.</h2></div>
+      <div class="notes-grid"><article><span class="note-number">01 / CATCH</span><h3>Start with the lean.</h3><p>Choose “All push, no damping” to try P alone. Increase P and watch it catch, overshoot, and swing back. Too little force lets gravity win.</p></article><article><span class="note-number">02 / SETTLE</span><h3>Give it a brake.</h3><p>Increase D to resist angular motion. Repeat the same push and compare the oscillations. A useful tune catches the stick and settles.</p></article><article><span class="note-number">03 / EXPLORE</span><h3>Make it work harder.</h3><p>Add a steady tip force and explore a little I. Turn off “Return to center” to isolate angle control and see why an upright stick can still drift.</p></article></div>
+      <details class="model-details"><summary>What is actually being simulated? <span aria-hidden="true">+</span></summary><div><p>A 0.3 kg uniform rigid rod, 1.4 m long, pivoted to a 1.0 kg translating base. The circle is a visual wheel; there is no rolling inertia, tire slip, or free contact between rod and ball. Gravity, base friction, rod inertia, and motor saturation are included.</p><p>The nonlinear equations run at 240 steps per simulated second with RK4 integration. Pushes apply an impulse at the rod tip. The track ends at ±3.2 m; a run ends at 70° of lean. Reset starts a new run with the same settings.</p><p>Angle is positive to the right. The inner controller uses <code>e = angle − target</code> in radians and <code>force = Kp·e + Ki·∫e dt + Kd·angular velocity</code>. Positive force moves the base right. Gain units are N/rad, N/(rad·s), and N·s/rad. Derivative uses measured velocity; integral has conditional anti-windup.</p><p>When enabled, a fixed, slower position loop requests up to 10° of lean to return the base to the origin. This is separate from the angle PID. The default uses PD with I = 0. Learn more from <a href="https://underactuated.mit.edu/acrobot.html#cart_pole" target="_blank" rel="noreferrer">MIT’s cart-pole notes ↗</a>.</p></div></details>
+    </section>
+  </main>
+  <footer><span>balance lab.</span><span>Small corrections. Better intuition.</span><span>LOCAL PHYSICS · NO DEPENDENCIES</span></footer>
+  <div id="announcement" class="sr-only" role="status" aria-live="polite"></div>
+  <noscript><div class="noscript-message">Enable JavaScript to run the balancing simulation.</div></noscript>
+</body>
+</html>

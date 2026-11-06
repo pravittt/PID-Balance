@@ -1,0 +1,10 @@
+{
+  "name": "balance-lab",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A local, dependency-free inverted pendulum and PID tuning playground.",
+  "scripts": {
+    "start": "node scripts/server.cjs",
+    "test": "node --test tests/*.test.cjs"
+  }
+}
